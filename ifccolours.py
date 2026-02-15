@@ -31,45 +31,56 @@ def main():
             print("Please type p, t, or exit")
             pass
 
-    print(property_or_type)
+    if property_or_type == "p":
 
-    while True:
+        while True:
 
-        try:
-            pset = input("Please enter Pset name (example: Pset_WallCommon) or type exit to quit: ")
-            if pset == "exit":
-                return
-            if check_pset_exists(model, pset) == False:
-                raise Exception
-            break
-        except:
-            print("Pset not found.")
-            pass
-    
-    while True:
-
-        try:
-            property = input("Please enter property name (example: FireRating) or type exit to quit: ")
-            if property == "exit":
-                return
-            elements = ifcopenshell.util.selector.filter_elements(model, f"IfcElement, {pset}.{property} != NULL")
-            if not elements:
-                raise Exception
-            break
-        except:
-            print("No elements with the requested property found in the Pset.")
-            pass
-
-    
-    elements_with_properties = [Element(element, ifcopenshell.util.element.get_pset(element, pset, property)) for element in elements]
-    
-    grouped = defaultdict(list)
-
-    for e in elements_with_properties:
-        grouped[e.property].append(e)
-
-    for property, group in grouped.items():
+            try:
+                pset = input("Please enter Pset name (example: Pset_WallCommon) or type exit to quit: ")
+                if pset == "exit":
+                    return
+                if check_pset_exists(model, pset) == False:
+                    raise Exception
+                break
+            except:
+                print("Pset not found.")
+                pass
         
+        while True:
+
+            try:
+                property = input("Please enter property name (example: FireRating) or type exit to quit: ")
+                if property == "exit":
+                    return
+                elements = ifcopenshell.util.selector.filter_elements(model, f"IfcElement, {pset}.{property} != NULL")
+                if not elements:
+                    raise Exception
+                break
+            except:
+                print("No elements with the requested property found in the Pset.")
+                pass
+
+        
+        elements_with_properties = [Element(element, property=ifcopenshell.util.element.get_pset(element, pset, property)) for element in elements]
+        
+        grouped = defaultdict(list)
+
+        for e in elements_with_properties:
+            grouped[e.property].append(e)
+
+    else:
+
+        elements = ifcopenshell.util.selector.filter_elements(model, "IfcElement")
+
+        elements_with_types = [Element(element, object_type=ifcopenshell.util.element.get_type(element)) for element in elements]
+        
+        grouped = defaultdict(list)
+
+        for e in elements_with_types:
+            grouped[e.object_type].append(e)
+
+    for key, group in grouped.items():
+                
         r = random.random()
         g = random.random()
         b = random.random()
@@ -87,7 +98,15 @@ def main():
             ifcopenshell.api.style.assign_item_style(model, style=style, item=representation.Items[0])
             
     new_file_name = get_available_filename(input_file)
-    model.write(new_file_name)       
+    model.write(new_file_name)
+
+
+class Element:
+
+    def __init__(self, element, property=None, object_type=None):
+        self.element = element
+        self.property = property
+        self.object_type = object_type
 
 
 def check_pset_exists(ifc_file, pset_name):
@@ -113,10 +132,6 @@ def get_available_filename(file_path):
         
     return file_path
 
-class Element:
-    def __init__(self, element, property):
-        self.element = element
-        self.property = property
 
 if __name__ == "__main__":
     main()
