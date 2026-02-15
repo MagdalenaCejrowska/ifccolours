@@ -1,6 +1,8 @@
 import ifcopenshell
 import ifcopenshell.util.selector
 from collections import defaultdict
+import random
+import os
 
 def main():
 
@@ -9,7 +11,7 @@ def main():
         try:
             input_file = input("Please enter IFC file path or type exit to quit: ")
             if input_file == "exit":
-                break
+                return
             model = ifcopenshell.open(input_file)
             break
         except:
@@ -21,7 +23,7 @@ def main():
         try:
             pset = input("Please enter Pset name (example: Pset_WallCommon) or type exit to quit: ")
             if pset == "exit":
-                break
+                return
             if check_pset_exists(model, pset) == False:
                 raise Exception
             break
@@ -34,7 +36,7 @@ def main():
         try:
             property = input("Please enter property name (example: FireRating) or type exit to quit: ")
             if property == "exit":
-                break
+                return
             elements = ifcopenshell.util.selector.filter_elements(model, f"IfcElement, {pset}.{property} != NULL")
             if not elements:
                 raise Exception
@@ -52,24 +54,25 @@ def main():
         grouped[e.property].append(e)
 
     for property, group in grouped.items():
-        print(property, [e.element for e in group])
-
-
-    """for group in groups:
-
-        r = 
-        g = 
-        b = 
+        
+        r = random.random()
+        g = random.random()
+        b = random.random()
         
         style = ifcopenshell.api.style.add_style(model)
 
         ifcopenshell.api.style.add_surface_style(model,
             style=style, ifc_class="IfcSurfaceStyleShading", attributes={
-                "SurfaceColour": { "Name": 'RGB' + r + g + b, "Red": 1.0, "Green": 0.8, "Blue": 0.8 },
-                "Transparency": 0.,
-            })"""
+                "SurfaceColour": { "Name": None, "Red": r, "Green": g, "Blue": b },
+                "Transparency": 0.0,
+            })
+        for e in group:
+
+            representation = ifcopenshell.util.representation.get_representation(e.element, context="Model", subcontext="Body")
+            ifcopenshell.api.style.assign_item_style(model, style=style, item=representation.Items[0])
             
-            
+    new_file_name = get_available_filename(input_file)
+    model.write(new_file_name)       
 
 
 def check_pset_exists(ifc_file, pset_name):
@@ -81,6 +84,19 @@ def check_pset_exists(ifc_file, pset_name):
             return True
 
     return False
+
+def get_available_filename(file_path):
+    
+    original_file_name_split = file_path.split(r".")
+    
+    counter = 1
+    while os.path.exists(file_path):
+        
+        file_path = (original_file_name_split[0] + "_coloured" + str(counter) + "." + original_file_name_split[1])
+
+        counter += 1
+        
+    return file_path
 
 class Element:
     def __init__(self, element, property):
