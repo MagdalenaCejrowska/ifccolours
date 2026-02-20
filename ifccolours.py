@@ -89,8 +89,7 @@ def main():
 
         ifcopenshell.api.style.add_surface_style(model,
             style=style, ifc_class="IfcSurfaceStyleShading", attributes={
-                "SurfaceColour": { "Name": None, "Red": r, "Green": g, "Blue": b },
-                "Transparency": 0.0,
+                "SurfaceColour": { "Name": None, "Red": r, "Green": g, "Blue": b }
             })
         for e in group:
 
